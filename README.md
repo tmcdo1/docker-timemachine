@@ -1,3 +1,4 @@
+> Modified to work on Raspberry Pis
 # mbentley/timemachine
 
 docker image to run Samba or AFP (netatalk) to provide a compatible Time Machine for MacOS
