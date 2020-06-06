@@ -1,10 +1,10 @@
-FROM hypriot/rpi-alpine-scratch
+FROM woahbase/alpine-s6:armhf
 MAINTAINER Matt Bentley <mbentley@mbentley.net>
 
 # install samba and s6; create supporting directories
 RUN apk update && \
   apk upgrade && \
-  apk add avahi avahi-compat-libdns_sd avahi-tools dbus samba-common-tools s6 samba-server && \
+  apk add --no-cache avahi avahi-compat-libdns_sd avahi-tools dbus samba-common-tools s6 samba-server && \
   mkdir /opt/timemachine && \
   touch /etc/samba/lmhosts && \
   rm /etc/samba/smb.conf && \
