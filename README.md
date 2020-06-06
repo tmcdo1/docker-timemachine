@@ -1,25 +1,21 @@
-> Modified to work on Raspberry Pis
-# mbentley/timemachine
+> Modified from [mbentley/timemachine](https://github.com/mbentley/docker-timemachine) to focus on Raspberry Pis
+# tmcdo1/docker-timemachine
 
-docker image to run Samba or AFP (netatalk) to provide a compatible Time Machine for MacOS
+Docker image to run Samba to provide a compatible Time Machine for MacOS
 
 ## Tags
 
-* `latest`, `afp` - AFP image based off of debian:jessie
-* `smb` - SMB image based off of alpine:latest
-* `smb-armv7l` - SMB image based off of alpine:latest for the `armv7l` architecture
-
-__Warning__: I would strongly suggest migrating to the SMB image as AFP is being deprecated by Apple and I've found it to be much more stable.  I do not plan on adding any new features to the AFP based config and I [plan on switching the default image in the `latest` tag to the SMB variant](https://github.com/mbentley/docker-timemachine/issues/38) soon.
+* `latest` - SMB image based off of alpine for ARMhf
 
 To pull this image:
-`docker pull mbentley/timemachine:smb`
+`docker pull tom20mcd/timemachine-rpi`
 
 ## Example usage for SMB
 
 Example usage with `--net=host` to allow Avahi discovery; all available environment variables set to their default values:
 
 ```
-docker run -d --restart=always \
+docker run -d --restart=unless-stopped \
   --name timemachine \
   --net=host \
   -e CUSTOM_SMB_CONF="false" \
@@ -42,13 +38,13 @@ docker run -d --restart=always \
   -v timemachine-var-lib-samba:/var/lib/samba \
   -v timemachine-var-cache-samba:/var/cache/samba \
   -v timemachine-run-samba:/run/samba \
-  mbentley/timemachine:smb
+  tom20mcd/timemachine-rpi
 ```
 
 Example usage with exposing ports _without_ Avahi discovery; all available environment variables set to their default values:
 
 ```
-docker run -d --restart=always \
+docker run -d --restart=unless-stopped \
   --name timemachine \
   --hostname timemachine \
   -p 137:137/udp \
@@ -75,7 +71,7 @@ docker run -d --restart=always \
   -v timemachine-var-lib-samba:/var/lib/samba \
   -v timemachine-var-cache-samba:/var/cache/samba \
   -v timemachine-run-samba:/run/samba \
-  mbentley/timemachine:smb
+  tom20mcd/timemachine-rpi
 ```
 
 ### Tips for Automatic Discovery w/Avahi
@@ -217,87 +213,11 @@ secrets:
     file: ./password.txt
 ```
 
-## AFP Examples and Variables
-
-<details><summary>Click to expand</summary>
-
-## Example docker-compose usage for AFP
-
-```
-docker-compose -f timemachine-compose.yml up -d
-```
-
-## Example `docker run` usage for AFP
-
-Example usage with `--net=host` to allow Avahi discovery to function:
-
-```
-docker run -d --restart=always \
-  --net=host \
-  --name timemachine \
-  -e CUSTOM_AFP_CONF="false" \
-  -e CUSTOM_USER="false" \
-  -e LOG_LEVEL="info" \
-  -e MIMIC_MODEL="TimeCapsule6,106" \
-  -e TM_USERNAME="timemachine" \
-  -e TM_GROUPNAME="timemachine" \
-  -e TM_UID="1000" \
-  -e TM_GID="1000" \
-  -e PASSWORD="timemachine" \
-  -e SET_PERMISSIONS="false" \
-  -e SHARE_NAME="TimeMachine" \
-  -e VOLUME_SIZE_LIMIT="0" \
-  -v /path/on/host/to/backup/to/for/timemachine:/opt/timemachine \
-  -v timemachine-netatalk:/var/netatalk \
-  -v timemachine-logs:/var/log/supervisor \
-  mbentley/timemachine:afp
-```
-
-Example usage with exposing ports _without_ Avahi discovery:
-
-```
-docker run -d --restart=always \
-  --name timemachine \
-  --hostname timemachine \
-  -p 548:548 \
-  -p 636:636 \
-  -e CUSTOM_AFP_CONF="false" \
-  -e CUSTOM_USER="false" \
-  -e LOG_LEVEL="info" \
-  -e MIMIC_MODEL="TimeCapsule6,106" \
-  -e TM_USERNAME="timemachine" \
-  -e TM_GROUPNAME="timemachine" \
-  -e TM_UID="1000" \
-  -e TM_GID="1000" \
-  -e PASSWORD="timemachine" \
-  -e SET_PERMISSIONS="false" \
-  -e SHARE_NAME="TimeMachine" \
-  -e VOLUME_SIZE_LIMIT="0" \
-  -v /path/on/host/to/backup/to/for/timemachine:/opt/timemachine \
-  -v timemachine-netatalk:/var/netatalk \
-  -v timemachine-logs:/var/log/supervisor \
-  mbentley/timemachine:afp
-```
-
-This works best with `--net=host` so that discovery can be broadcast.  Otherwise, you will need to expose the above ports and then you must manually map the share in Finder for it to show up (open `Finder`, click `Shared`, and connect as `afp://hostname-or-ip/TimeMachine` with your TimeMachine credentials).
-
-Optional variables for AFP:
-
-| Variable | Default | Description |
-| :------- | :------ | :---------- |
-| `CUSTOM_AFP_CONF` | `false` | indicates that you are going to bind mount a custom config to `/etc/netatalk/afp.conf` if set to `true` |
-| `CUSTOM_USER` | `false` | indicates that you are going to bind mount `/etc/password`, `/etc/group`, and `/etc/shadow`; and create data directories if set to `true` |
-| `LOG_LEVEL` | `info` | sets the netatalk log level |
-| `MIMIC_MODEL` | `TimeCapsule6,106` | sets the value of time machine to mimic |
-| `TM_USERNAME` | `timemachine` | sets the username time machine runs as |
-| `TM_GROUPNAME` | `timemachine` | sets the group name time machine runs as |
-| `TM_UID` | `1000` | sets the UID of the `TM_USERNAME` user |
-| `TM_GID` | `1000` | sets the GID of the `TM_GROUPNAME` group |
-| `PASSWORD` | `timemachine` | sets the password for the `timemachine` user |
-| `SET_PERMISSIONS` | `false` | set to `true` to have the entrypoint set ownership and permission on `/opt/timemachine` |
-| `SHARE_NAME` | `TimeMachine` | sets the name of the timemachine share to TimeMachine by default |
-| `VOLUME_SIZE_LIMIT` | `0` | sets the maximum size of the time machine backup in MiB ([mebibyte](https://en.wikipedia.org/wiki/Mebibyte)) |
-
-</details>
-
 Thanks for [odarriba](https://github.com/odarriba) and [arve0](https://github.com/arve0) for their examples to start from.
+
+# Changes from mbentley/timemachine
+
+- Modified `README.md` to describe status and focus on SMB
+- Removed `Dockerfile.afp` for no more support
+- Modified `Dockerfile.smb` to use a different base image for ARM architectures and update the `apk` commands
+- removed extraneous compose files
